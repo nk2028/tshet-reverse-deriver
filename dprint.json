@@ -1,0 +1,12 @@
+{
+  "typescript": {
+    "quoteStyle": "preferSingle"
+  },
+  "excludes": [
+    "data/tupa.js",
+    "**/node_modules"
+  ],
+  "plugins": [
+    "https://plugins.dprint.dev/typescript-0.91.8.wasm"
+  ]
+}

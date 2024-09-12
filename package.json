@@ -9,7 +9,7 @@
     "import": "./index.mjs"
   },
   "scripts": {
-    "test": "node test.js"
+    "test": "eslint && dprint check --list-different && node test.js"
   },
   "author": "SyiMyuZya",
   "license": "MIT",
@@ -17,6 +17,9 @@
     "qieyun": "^0.13.0"
   },
   "devDependencies": {
-    "eslint": "^8.11.0"
+    "@eslint/js": "^9.10.0",
+    "dprint": "^0.47.2",
+    "eslint": "^9.10.0",
+    "globals": "^15.9.0"
   }
 }

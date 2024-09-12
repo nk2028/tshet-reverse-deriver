@@ -94,7 +94,7 @@ function testInvalid() {
   return errCount === 0;
 }
 
-//console.log('#', 拼音反推('uinh').描述);
+// console.log('#', 拼音反推('uinh').描述);
 
 (async () => {
   let success = true;

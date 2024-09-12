@@ -1,0 +1,6 @@
+{
+    "[javascript]": {
+        "editor.defaultFormatter": "dprint.dprint",
+        "editor.formatOnSave": true
+    }
+}

@@ -1,7 +1,7 @@
 // 啟動 REPL 並自動 import
 
-import 拼音反推 from './index.js';
 import Qieyun from 'qieyun';
+import 拼音反推 from './index.js';
 
 import { start as startRepl } from 'repl';
 
