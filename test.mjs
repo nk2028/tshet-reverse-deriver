@@ -2,18 +2,10 @@
 
 import { readFileSync } from 'node:fs';
 
-import TshetUinh, { 資料, 音韻地位 } from 'tshet-uinh';
+import TshetUinh from 'tshet-uinh';
 import { 推導方案 } from 'tshet-uinh-deriver-tools';
 
-// TODO dummy
-/**
- * @param {string} _音節
- * @returns {音韻地位}
- */
-// eslint-disable-next-line no-unused-vars -- dummy
-function 音韻地位fromTUPA(_音節) {
-  return 音韻地位.from描述('幫三C凡入');
-}
+import 音韻地位fromTUPA from './index.mjs';
 
 function testOnData(printLimit = 30) {
   const deriveTUPA = new 推導方案(
@@ -28,7 +20,7 @@ function testOnData(printLimit = 30) {
   let runCount = 0;
   let failedCount = 0;
   console.log('Testoj per datumoj de TshetUinh.js');
-  for (const 地位 of 資料.iter音韻地位()) {
+  for (const 地位 of TshetUinh.資料.iter音韻地位()) {
     runCount += 1;
     const tupa = deriveTUPA(地位);
     let failMessage = '';
@@ -58,6 +50,8 @@ function testOnData(printLimit = 30) {
   }
   return failedCount === 0;
 }
+
+// TODO more valid 音韻地位s
 
 function testInvalid() {
   console.log('Testoj pri navalidaj latinigoj');

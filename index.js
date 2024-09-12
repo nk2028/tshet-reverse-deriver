@@ -1,14 +1,17 @@
 // @ts-check
 
-const Qieyun = require('qieyun');
+const TshetUinh = require('tshet-uinh');
+const { 音韻地位 } = TshetUinh;
 
-module.exports = 拼音反推;
+/** @typedef {TshetUinh.音韻地位} 音韻地位 */
+
+module.exports = 音韻地位fromTUPA;
 
 /**
  * @param {string} 音節
- * @returns {Qieyun.音韻地位}
+ * @returns {音韻地位}
  */
-function 拼音反推(音節) {
+function 音韻地位fromTUPA(音節) {
   音節 = 音節.toLowerCase();
 
   // 分解音節
@@ -171,7 +174,7 @@ function 拼音反推(音節) {
   }
 
   try {
-    return new Qieyun.音韻地位(母, 呼, 等, 重, 韻, 聲);
+    return new 音韻地位(母, 呼, 等, 重, 韻, 聲);
   } catch (e) {
     const 描述 = `${母}${呼 || ''}${等}${重 || ''}${韻}${聲}`;
     let 提示 = '';

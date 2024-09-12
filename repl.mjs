@@ -1,11 +1,12 @@
 // 啟動 REPL 並自動 import
 
-import Qieyun from 'qieyun';
-import 拼音反推 from './index.js';
+import { start as startRepl } from 'node:repl';
 
-import { start as startRepl } from 'repl';
+import TshetUinh from 'tshet-uinh';
+
+import 音韻地位fromTUPA from './index.mjs';
 
 const repl = startRepl();
-repl.context.拼音反推 = 拼音反推;
-repl.context.rev = 拼音反推;
-repl.context.Qieyun = Qieyun;
+repl.context.音韻地位fromTUPA = 音韻地位fromTUPA;
+repl.context.fromTUPA = 音韻地位fromTUPA;
+repl.context.TshetUinh = TshetUinh;

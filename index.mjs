@@ -1,5 +1,5 @@
-import 拼音反推 from './index.js';
+import 音韻地位fromTUPA from './index.js';
 
-export { 拼音反推 };
+export { 音韻地位fromTUPA };
 
-export default 拼音反推;
+export default 音韻地位fromTUPA;

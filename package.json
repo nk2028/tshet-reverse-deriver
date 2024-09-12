@@ -1,7 +1,7 @@
 {
-  "name": "tupa-reverse-deriver",
-  "version": "0.2.0",
-  "description": "切韻拼音反推音韻地位",
+  "name": "tupa-parser",
+  "version": "0.3.0-alpha",
+  "description": "Tool for parsing a syllable in TUPA (切韻拼音) into 音韻地位",
   "main": "index.js",
   "module": "index.mjs",
   "exports": {
@@ -14,7 +14,6 @@
   "author": "SyiMyuZya",
   "license": "MIT",
   "dependencies": {
-    "qieyun": "^0.13.0",
     "tshet-uinh": "^0.15.0",
     "tshet-uinh-deriver-tools": "^0.2.0"
   },
