@@ -9,12 +9,14 @@
     "import": "./index.mjs"
   },
   "scripts": {
-    "test": "eslint && dprint check --list-different && node test.js"
+    "test": "eslint && dprint check --list-different && node test.mjs"
   },
   "author": "SyiMyuZya",
   "license": "MIT",
   "dependencies": {
-    "qieyun": "^0.13.0"
+    "qieyun": "^0.13.0",
+    "tshet-uinh": "^0.15.0",
+    "tshet-uinh-deriver-tools": "^0.2.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.10.0",

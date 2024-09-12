@@ -6,7 +6,7 @@ export default [
   { files: ['**/*.js'], languageOptions: { sourceType: 'commonjs' } },
   pluginJs.configs.recommended,
   {
-    files: ['test.js', 'repl.js', /* TODO remove */ 'loader.js'],
+    files: ['test.mjs', 'repl.js'],
     languageOptions: { globals: { ...globals.node } },
   },
 ];
