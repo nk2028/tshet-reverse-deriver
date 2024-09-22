@@ -9,318 +9,179 @@ module.exports = 音韻地位fromTUPA;
 
 /**
  * @param {string} 音節
+ * @param {TshetUinh.邊緣地位種類指定=} 邊緣地位種類
  * @returns {音韻地位}
  */
-function 音韻地位fromTUPA(音節) {
+function 音韻地位fromTUPA(音節, 邊緣地位種類) {
   音節 = 音節.toLowerCase();
 
-  // 分解音節
-  let [母, 聲, 韻母] = split音節(音節);
-  const [介, 主, 尾] = split韻母(韻母, 音節);
+  let [母, 元音, 韻尾, 聲] = split音節(音節);
 
-  // 分析介音
-  const 合介音 = /^[wu]/.test(介) ? 介.slice(0, 1) : null;
-  const 三等介音 = /[iyu]$/.test(介) ? 介.slice(-1) : null;
+  if (母 === '云' && /^wy.|^wu/.test(元音)) {
+    throw new Error(`無法識別元音 ${元音} (${音節})【提示：云母不寫】`);
+  }
+  let [韻基元音, 呼, 等類] = parse元音(元音, 韻尾, 音節);
 
-  function throw介音搭配(提示) {
-    const hint = 提示 ? ` 【提示：${提示}】` : '';
-    throw new Error(`不合法介音搭配 ${介}-${主}${尾} (${音節})${hint}`);
+  // 拼寫搭配檢查
+  // 脣音
+  if ([...'幫滂並明'].includes(母)) {
+    if (韻基元音 === 'o') {
+      if (元音 === 'weo') {
+        throw new Error(`脣音不拼 weo 形式 (${音節})【提示：用開口形式】`);
+      } else if (呼 === '開' && 韻尾 !== 'ng') {
+        throw new Error(`脣音除 -ng(k) 尾外不拼 ${元音} 形式 (${音節})【提示：用合口形式】`);
+      }
+    } else if (韻基元音 === 'a' && 等類 === 'C') {
+      if (呼 === '開') {
+        throw new Error(`脣音不拼 ${元音} 形式 (${音節})【提示：用合口形式】`);
+      }
+    } else if (韻基元音 !== 'u') {
+      if (呼 === '合') {
+        throw new Error(`脣音不拼 ${元音} 形式 (${音節})【提示：用開口形式】`);
+      }
+    }
+  }
+  // 銳音
+  if (![...'幫滂並明見溪羣疑影曉匣云'].includes(母)) {
+    if (等類 === '四' && 韻基元音 === 'i' && [...'端透定泥'].includes(母)) {
+      const 提示 = 韻尾 === '' ? '脂韻用原形式 (w)i，齊韻用 (w)ej' : '用原形式 (w)i';
+      throw new Error(`端組聲母不拼 (w)ei 形式 (${音節})【提示：${提示}】`);
+    }
+    if ((等類 === 'A' || 等類 === 'B') && !['i', 'e', 'ee', 'ae'].includes(韻基元音)) {
+      throw new Error(`銳音聲母不拼 ${元音} 形式 (${音節})【提示：用C類形式】`);
+    }
+    const is莊組 = [...'莊初崇生俟'].includes(母);
+    if (等類 === 'A' && is莊組) {
+      throw new Error(`莊組聲母應拼B類拼寫形式 (${音節})`);
+    } else if (等類 === 'B' && !is莊組) {
+      throw new Error(`莊組以外銳音聲母不拼B類拼寫形式 (${音節})`);
+    }
   }
 
-  // 韻
-  const 韻基元音 = 主 === 'e' && 三等介音
-    ? 'ie'
-    : 主 === 'o' && ['y', 'u'].includes(介)
-    ? 介 + 主
-    : 主;
-  let 韻 = 韻基到韻[尾].replace(/ /g, '')[韻基元音表.indexOf(韻基元音)];
-  if (!韻 || 韻 === '　') {
-    const 韻基 = 韻基元音 + 尾;
+  // 呼由拼寫形式調整為實際音韻地位（暫不考慮脣音）
+  if ((元音 === 'o' && (韻尾 === 'w' || 韻尾 === 'm'))) {
+    呼 = '開';
+  } else if ((元音 === 'uo' && 韻尾 === 'ng') || (['u', 'ou', 'o'].includes(元音) && (韻尾 === '' || 韻尾 === 'ng'))) {
+    呼 = null;
+  }
+
+  // 依韻基、等類、呼確定韻
+  let 韻 = {
+    i: '脂蒸　真幽侵',
+    y: '之蒸微殷　　',
+    u: '尤東微文　　',
+    e: '支青祭仙宵鹽',
+    o: '魚鍾廢元　嚴',
+    ee: '佳耕皆山　咸',
+    oeu: '　江　　　　',
+    ae: '麻庚夬刪肴銜',
+    a: '歌陽泰寒豪談',
+  }[韻基元音][['', 'ng', 'j', 'n', 'w', 'm'].indexOf(韻尾)];
+  if (韻 === '　') {
     let 提示 = '';
-    if (/e?ow/.test(韻基)) {
-      提示 = '侯韻為 ou';
-    } else if (韻基 === 'yw') {
-      提示 = '幽韻為 (y)iw';
+    if (韻尾 === 'w') {
+      if (韻基元音 === 'o') {
+        提示 = '豪韻用 aw，侯韻用 ou';
+      } else if (韻基元音 === 'y') {
+        提示 = '尤韻用 u，幽韻用 (y)iw';
+      } else if (韻基元音 === 'u') {
+        提示 = '尤韻用 u';
+      }
+    } else if (韻尾 === 'j') {
+      if (韻基元音 === 'i') {
+        提示 = '脂韻用 i';
+      }
     }
     if (提示) {
-      提示 = ` 【提示：${提示}】`;
+      提示 = `【提示：${提示}】`;
     }
-    throw new Error(`無法識別韻基 ${韻基元音}${尾} (${音節})${提示}`);
-  }
-  if (韻 === '唐' && ['i', 'y', 'u'].includes(介)) {
-    韻 = '陽';
+    throw new Error(`無法識別韻基 ${韻基元音}${韻尾} (${音節})${提示}`);
   }
 
-  // 等
-  let 等;
-  if (['i', 'y', 'u'].includes(主)) {
-    if (三等介音 && !(主 === 'i' && ['y', 'u', 'w'].includes(介))) {
-      throw介音搭配(主 === 'u' ? '三等 u 不需介音' : null);
-    }
-    等 = '三';
-  } else if (三等介音) {
-    if (['y', 'u', 'ou', 'ee', 'eo', 'oeu'].includes(主)) {
-      throw介音搭配();
-    }
-    等 = '三';
-  } else {
-    if (['ee', 'oeu', 'ae'].includes(主)) {
-      等 = '二';
-    } else {
-      等 = 主 === 'e' ? '四' : '一';
-    }
+  if (呼 !== null && 韻 === '鍾') {
+    韻 = '登';
   }
-
-  // 呼
-  let 呼 = null;
-  if ([...'東冬江模尤'].includes(韻)) {
-    !介
-      || throw介音搭配(主 === 'o' && 介.endsWith('i') ? '用鈍介音 y/u' : null);
-  } else if (['鍾', '虞'].includes(韻)) {
-    介 === 'u' || throw介音搭配();
-  } else if (韻 === '幽') {
-    !介 || 介 === 'y' || throw介音搭配();
-  } else {
-    if (['o', 'u', 'y'].includes(主) && 介 === 'w') {
-      throw介音搭配(
-        主 === 'o'
-          ? '合口 o 不需 w 介音'
-          : 主 === 'y'
-          ? 'y 所對應合口為 u'
-          : null,
-      );
-    }
-    const 拼寫呼 = 合介音 || (['o', 'u'].includes(主) && !介 && 韻 !== '覃') ? '合' : '開';
-    if (['幫', '滂', '並', '明'].includes(母)) {
-      if (
-        ['欣', '痕', '嚴'].includes(韻)
-        || ([...'微廢灰文元魂凡'].includes(韻)
-            || (韻 === '歌' && 等 === '三')
-            || (韻 === '陽' && 介 !== 'i'))
-          !== (拼寫呼 === '合')
-      ) {
-        throw new Error(`不合法脣音拼寫開合 (${音節})`);
-      }
-    } else {
-      呼 = 拼寫呼;
-    }
+  if (等類 === '一' || 等類 == '四') {
+    韻 = {
+      尤: '侯',
+      祭: '齊',
+      仙: '先',
+      宵: '蕭',
+      鹽: '添',
+      魚: '模',
+      鍾: '冬',
+      廢: '咍',
+      元: '痕',
+      嚴: '覃',
+      陽: '唐',
+    }[韻] ?? 韻;
   }
-
-  // 重紐
-  let 重 = null;
-  if (三等介音 || 主 === 'i') {
-    const 鈍介音 = ['y', 'u'].includes(介) ? 介 : null;
-
-    if (韻 === '庚' && !鈍介音) {
-      韻 = '清';
-    }
-
-    // 主元音搭配
-    if (韻 === '陽' && 介 === 'i' && [...'幫滂並明'].includes(母)) {
-      // 陽韻特殊重紐（如「𩦠」小韻）
-      重 = 'A';
-    } else if (['o', 'a'].includes(主) && !鈍介音) {
-      throw介音搭配('用鈍介音 y/u');
-    }
-    if (韻 === '麻' && 鈍介音) {
-      throw介音搭配();
-    }
-
-    // 銳聲母搭配
-    if ([...'莊初崇生俟'].includes(母)) {
-      if (!鈍介音) {
-        throw new Error(`莊組不可配銳三等介音 (${音節})`);
-      }
-    } else if ([...'端透定泥來知徹澄孃精清從心邪章昌常書船日以'].includes(母)) {
-      if (['i', 'e', 'ae'].includes(主) && 鈍介音) {
-        throw new Error(`莊組以外銳音聲母不可配B類 (${音節})`);
-      }
-    }
-
-    if (
-      [...'支脂祭眞仙宵侵鹽'].includes(韻)
-      && [...'幫滂並明見溪羣疑影曉匣'].includes(母)
-    ) {
-      重 = ['y', 'u'].includes(介) ? 'B' : 'A';
-    }
+  if (呼 === '合') {
+    韻 = { 魚: '虞', 咍: '灰', 痕: '魂', 嚴: '凡' }[韻] ?? 韻;
   }
-  // 個別韻介音搭配檢查
-  if (韻 === '蒸') {
-    if (主 == 'i' && ['', 'w'].includes(介)) {
-      throw new Error(`蒸韻不可用A類 (${音節})`);
-    }
-    if (呼 === '合' || ['幫', '滂', '並', '明'].includes(母)) {
-      if (!(主 == 'i' && ['y', 'u'].includes(介))) {
-        throw new Error(`蒸韻脣音或合口當用B類 (${音節})`);
-      }
-    } else if ([...'見溪群疑影曉匣云'].includes(母)) {
-      // 蒸韻實無云母開口，此處僅為使 if 分支覆蓋萬一的情形而已
-      主 === 'i' && 介 === 'y' && 母 !== '云' && (重 = 'B');
-    } else if (!(主 === 'y' && !介)) {
-      throw new Error(`蒸韻銳聲母當用C類 (${音節})`);
-    }
-  } else if (韻 === '幽') {
-    if (['幫', '滂', '並', '明'].includes(母) && 介 !== 'y') {
-      throw new Error(`幽韻脣音當用B類 (${音節})`);
-    } else if ([...'見溪群疑影曉匣'].includes(母) && 介 === 'y') {
-      重 = 'B';
-    }
-  }
-
-  // 調整
-  if (韻 === '眞' && 呼 === '開' && [...'莊初崇生俟'].includes(母)) {
-    // 此為總體調整，後面另有個別調整
+  if (韻 === '庚' && 等類 === 'A') {
+    韻 = '清';
+  } else if (韻 === '真' && 呼 === '開' && [...'莊初崇生俟'].includes(母)) {
     韻 = '臻';
   }
 
+  // 呼、等、類由拼寫形式調整為實際音韻地位
+  /** @type {string} */
+  let 等;
+  /** @type {string | null} */
+  let 類;
+  if ([...'ABC'].includes(等類)) {
+    等 = '三';
+    類 = 等類;
+  } else {
+    等 = 等類;
+    類 = null;
+  }
+  if ([...'幫滂並明'].includes(母)) {
+    呼 = null;
+  } else if (![...'幫滂並明見溪羣疑影曉匣云'].includes(母)) {
+    類 = null;
+    if ([...'端透定泥'].includes(母) && 等 === '三') {
+      等 = '四';
+    }
+  }
+
   try {
-    return new 音韻地位(母, 呼, 等, 重, 韻, 聲);
+    return new 音韻地位(母, 呼, 等, 類, 韻, 聲, 邊緣地位種類);
   } catch (e) {
-    const 描述 = `${母}${呼 || ''}${等}${重 || ''}${韻}${聲}`;
-    let 提示 = '';
-    if (等 === '三' && ['寒', '談'].includes(韻)) {
-      提示 = `${韻 === '寒' ? '元' : '嚴凡'}韻為 y/uo${韻 === '寒' ? 'n' : 'm'}`;
+    const 描述 = `${母}${呼 ?? ''}${等}${類 ?? ''}${韻}${聲}`;
+    const 提示 = [];
+    if ((類 === 'A' || 類 === 'B') && !['i', 'e', 'ee', 'ae'].includes(韻基元音)) {
+      提示.push('用C類');
     }
-    if (提示) {
-      提示 = ` 【提示：${提示}】`;
+    if (等 !== '一' && [...'泰寒談'].includes(韻)) {
+      const [提示韻, 提示拼寫] = 韻 === '談' && [...'幫滂並明'].includes(母)
+        ? ['凡', 'uom']
+        : { 泰: ['廢', 'y/uoj'], 寒: ['元', 'y/uon'], 談: ['嚴', 'yom'] }[韻];
+      提示.push(`${提示韻}韻用 ${提示拼寫}`);
     }
-    throw new Error(`音韻地位「${描述}」不合法 (${音節}): ${e.message}${提示}`);
+    if (等 === '四' && 韻 === '脂' && ![...'端透定泥'].includes(母)) {
+      提示.push(`齊韻用 (w)ej`);
+    }
+    const 所有提示 = 提示.length ? `【提示：${提示.join('；')}】` : '';
+    throw new Error(`音韻地位「${描述}」不合法 (${音節}): ${e.message}${所有提示}`);
   }
 }
 
-/**
- * @param {string} 音節
- * @returns {[string, string, string]}
- */
-function split音節(音節) {
-  let rest = 音節;
-
-  let 母;
-  if (/^[yu]/.test(rest)) {
-    母 = '云';
-  } else {
-    const match = /^[^aeiouwy]+/.exec(rest);
-    const 母拼寫 = match ? match[0] : '';
-    母 = 聲母表[母拼寫];
-    if (!母) {
-      let 提示 = '';
-      let 糾正 = 聲母糾正表[母拼寫];
-      if (糾正) {
-        if (!(糾正 instanceof Array)) {
-          糾正 = [糾正];
-        }
-        提示 = 糾正
-          .map((/** @type {string} */ x) => `${聲母表[x]}母為 ${x}`)
-          .join('、');
-      } else if (/^w[yu]/.test(rest)) {
-        提示 = '云母不寫';
-      }
-      if (提示) {
-        提示 = ` 【提示：${提示}】`;
-      }
-      throw new Error(`無法識別聲母 ${母拼寫} (${音節})${提示}`);
-    }
-    rest = rest.slice(母拼寫.length);
-  }
-
-  let 聲;
-  if (/[qh]$/.test(rest)) {
-    聲 = { q: '上', h: '去' }[rest.slice(-1)];
-    rest = rest.slice(0, -1);
-  } else if (/[ktp]$/.test(rest)) {
-    聲 = '入';
-    rest = rest.slice(0, -1) + { k: 'ng', t: 'n', p: 'm' }[rest.slice(-1)];
-  } else if (/x$/.exec(rest)) {
-    throw new Error(
-      `無法識別聲調 ${rest.slice(-1)} (${音節})` + `【提示：上聲用 -q】`,
-    );
-  } else {
-    聲 = '平';
-  }
-
-  return [母, 聲, rest];
-}
-
-/**
- * @param {string} 韻母
- * @returns {[string, string, string]}
- */
-function split韻母(韻母, 音節 = '?') {
-  let 元音 = 韻母;
-  let 尾;
-
-  const 尾Pos = 韻母.search(/(?:ng|[jnwm])$/);
-  if (尾Pos === -1) {
-    尾 = '';
-  } else {
-    尾 = 韻母.slice(尾Pos);
-    元音 = 韻母.slice(0, 尾Pos);
-  }
-
-  const 主 = 主元音表.reduce((cur, v) => {
-    if (元音.endsWith(v)) {
-      if (cur === null || v.length > cur.length) {
-        return v;
-      }
-    }
-    return cur;
-  }, null);
-  if (!主) {
-    throw new Error(`無法識別韻母 ${韻母} (${音節})`);
-  }
-  const 介 = 元音.slice(0, -主.length);
-  if (!['', 'y', 'u', 'i', 'wi', 'w'].includes(介)) {
-    let 提示 = '';
-    if (/[iu]$/.test(主) && /[aeiouy]$/.test(介)) {
-      提示 = ' 【提示：切韻拼音用 -j -w 尾】';
-    }
-    throw new Error(`無法識別韻母 ${韻母}  (${音節})${提示}`);
-  }
-  return [介, 主, 尾];
-}
-
-const 聲母表 = Object.fromEntries(
-  `
-  幫 p   滂 ph   並 b   明 m
-  端 t   透 th   定 d   泥 n  來 l
-  知 tr  徹 trh  澄 dr  孃 nr
-  見 k   溪 kh   羣 g   疑 ng
-  影 q   曉 h    匣 gh
-  精 ts  清 tsh  從 dz  心 s  邪 z
-  莊 tsr 初 tsrh 崇 dzr 生 sr 俟 zr
-  章 tj  昌 tjh  常 dj  書 sj 船 zj 日 nj 以 j
-`
-    .trim()
-    .split(/\s+/)
-    .reduce((arr, s, i) => {
-      if (i % 2 === 0) {
-        arr.push([]);
-      }
-      arr[arr.length - 1].unshift(s);
-      return arr;
-    }, []),
-);
-
-const 韻基元音表 = `
-  i     y  u  ou
-  e  ee eo o  oeu
-  ie    yo uo
-     ae a
-`
-  .trim()
-  .split(/\s+/);
-const 主元音表 = 韻基元音表.filter((x) => !/^[iyu]./.test(x));
-
+/** @type {Record<string, string>} */
 // dprint-ignore
-const 韻基到韻 = {
-  '': '脂之尤侯 　佳　模　 支魚虞 麻歌',
-  ng: '蒸蒸東東 青耕登冬江 　　鍾 庚唐',
-  j:  '　微微　 齊皆咍灰　 祭廢廢 夬泰',
-  n:  '眞欣文　 先山痕魂　 仙元元 刪寒',
-  w:  '幽　　　 蕭　　　　 宵　　 肴豪',
-  m:  '侵　　　 添咸　覃　 鹽嚴凡 銜談',
+const 聲母表 = {
+  p:   '幫', ph:   '滂', b:   '並', m:  '明',
+  t:   '端', th:   '透', d:   '定', n:  '泥', l: '來',
+  tr:  '知', trh:  '徹', dr:  '澄', nr: '孃',
+  k:   '見', kh:   '溪', g:   '羣', ng: '疑',
+  q:   '影', h:    '曉', gh:  '匣',
+  ts:  '精', tsh:  '清', dz:  '從', s:  '心', z: '邪',
+  tsr: '莊', tsrh: '初', dzr: '崇', sr: '生', zr: '俟',
+  tj:  '章', tjh:  '昌', dj:  '常', sj: '書', zj: '船', nj: '日', j: '以',
 };
 
+/** @type {Record<string, string | string[]>} */
 const 聲母糾正表 = {
   // h 應置後
   thr: 'trh',
@@ -338,3 +199,133 @@ const 聲母糾正表 = {
   sh: 'sj',
   zh: 'zj',
 };
+
+/**
+ * @param {string} 音節
+ * @returns {[string, string, string, string]}
+ * - 母（名稱）
+ * - 元音（拼寫、未驗證）
+ * - 韻尾（拼寫、入聲歸舒聲）
+ * - 聲（名稱）
+ */
+function split音節(音節) {
+  const match = /w?[aeiouy]+/.exec(音節);
+  if (!match) {
+    throw new Error('無法識別音節結構');
+  }
+
+  const 元音 = match[0];
+
+  const 母拼寫 = 音節.slice(0, match.index);
+  const 母 = !母拼寫 ? '云' : 聲母表[母拼寫];
+  if (!母) {
+    let 提示 = '';
+    /** @type {string | string[]} */
+    let 糾正 = 聲母糾正表[母拼寫];
+    if (糾正) {
+      if (!Array.isArray(糾正)) {
+        糾正 = [糾正];
+      }
+      提示 = 糾正
+        .map((x) => `${聲母表[x]}母為 ${x}`)
+        .join('，');
+    }
+    if (提示) {
+      提示 = `【提示：${提示}】`;
+    }
+    throw new Error(`無法識別聲母 ${母拼寫} (${音節})${提示}`);
+  }
+
+  let 韻尾 = 音節.slice(match.index + 元音.length);
+  /** @type {string} */
+  let 聲;
+  let match尾調;
+  if (['k', 't', 'p'].includes(韻尾)) {
+    聲 = '入';
+    韻尾 = { k: 'ng', t: 'n', p: 'm' }[韻尾];
+  } else if ((match尾調 = /^((?:ng|[jnwm])?)([qh]?)$/.exec(韻尾))) {
+    聲 = { '': '平', q: '上', h: '去' }[match尾調[2]];
+    韻尾 = match尾調[1];
+  } else if (韻尾.endsWith('x')) {
+    throw new Error(
+      `無法識別聲調 -x (${音節})` + `【提示：上聲用 -q】`,
+    );
+  } else {
+    throw new Error(`無法識別韻尾/聲調 -${韻尾} (${音節})`);
+  }
+
+  return [母, 元音, 韻尾, 聲];
+}
+
+/**
+ * @param {string} 元音
+ * @param {string} 韻尾
+ * @param {string} 音節
+ * @returns {[string, string | null, string]} 韻基元音、呼、等類（呼與等類均為拼寫形式上的，僅 oeu 在此階段為開合中立）
+ */
+function parse元音(元音, 韻尾, 音節) {
+  if (元音 === 'oi') {
+    throw new Error(`元音 oi 已棄用 (${音節})【提示：用 oy】`);
+  }
+  const 常用指示 = ['w', 'i', 'wi', 'y', 'u'];
+  for (
+    const [韻基元音, 預設呼等類, 指示搭配] of /** @type {[string, [string | null, string], string[]][]}*/ ([
+      ['oeu', [null, '二'], []],
+      ['ee', ['開', '二'], 常用指示], // 除 w- 外餘皆非合法地位
+      ['ae', ['開', '二'], 常用指示],
+      ['i', ['開', 'A'], ['w', 'y', 'u', 'e', 'we']],
+      ['y', ['開', 'C'], ['w', 'o']], // wy 限 -∅/-ng；oy 見於「怎」tsoymq，可解析，但 TshetUinh.js 並不支援
+      ['u', ['合', 'C'], ['o', 'i', 'y']], // iu、yu 分別解析為 A、B 類，均非合法地位
+      ['e', ['開', '四'], 常用指示],
+      ['o', ['合', '一'], ['e', 'we', ...常用指示.slice(1)]], // eo 限非 -w/-m；weo 限 -∅/-ng
+      ['a', ['開', '一'], 常用指示],
+    ])
+  ) {
+    if (!元音.endsWith(韻基元音)) {
+      continue;
+    }
+
+    const 指示 = 元音.slice(0, -韻基元音.length);
+    if (!指示) {
+      return [韻基元音, ...預設呼等類];
+    }
+    if (!指示搭配.includes(指示)) {
+      const 提示 = 韻尾 === '' && (韻基元音 === 'i' || 韻基元音 === 'u') && /[aeiouy]$/.test(指示)
+        ? `【提示：切韻拼音用 -j -w 尾】`
+        : '';
+      throw new Error(`無法識別元音 ${元音} (${音節})${提示}`);
+    }
+
+    let [呼, 等類] = 預設呼等類;
+    if (指示 === 'i' || 指示 === 'wi') {
+      等類 = 'A';
+      呼 = 指示 === 'i' ? '開' : '合';
+    } else if (指示 === 'y' || 指示 === 'u') {
+      等類 = 預設呼等類[1] === '一' ? 'C' : 'B';
+      呼 = 指示 === 'y' ? '開' : '合';
+    } else if (指示 === 'w') {
+      if (韻基元音 === 'y' && !(韻尾 === '' || 韻尾 === 'ng')) {
+        throw new Error(`元音 wy 僅可用於無尾或 -ng(k) 尾 (${音節})`);
+      }
+      呼 = '合';
+    } else if (指示 === 'e' || 指示 === 'we') {
+      if (韻基元音 === 'o') {
+        if (指示 === 'e' && (韻尾 === 'w' || 韻尾 === 'm')) {
+          throw new Error(`元音 eo 不用於 -w/-m(p) 尾 (${音節})【提示：用 o】`);
+        } else if (指示 === 'we' && 韻尾 !== 'ng') {
+          throw new Error(`元音 weo 僅可用於 -ng(k) 尾 (${音節})`);
+        }
+      } else if (韻基元音 === 'i') {
+        等類 = '四';
+      }
+      呼 = 指示 === 'e' ? '開' : '合';
+    } else if (指示 === 'o') {
+      等類 = '一';
+    } else {
+      throw new Error(`interna eraro: literumo ne traktita: ${指示}-${韻基元音}`);
+    }
+
+    return [韻基元音, 呼, 等類];
+  }
+  throw new Error(`無法識別元音 ${元音} (${音節})`);
+}
