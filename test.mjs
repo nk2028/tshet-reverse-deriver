@@ -2,12 +2,91 @@
 
 import { readFileSync } from 'node:fs';
 
-import TshetUinh from 'tshet-uinh';
+import TshetUinh, { 音韻地位 } from 'tshet-uinh';
 import { 推導方案 } from 'tshet-uinh-deriver-tools';
 
 import 音韻地位fromTUPA from './index.mjs';
 
-function testOnData(printLimit = 30) {
+/**
+ * @template T, U
+ * @param {Iterable<T>} iter
+ * @param {(x: T) => U} f
+ * @returns {Iterable<U>}
+ */
+function* mapIter(iter, f) {
+  for (const x of iter) {
+    yield f(x);
+  }
+}
+
+/**
+ * @param {string} title
+ * @param {Iterable<string | null>} testCases
+ * @param {number} printLimit
+ * @returns {[number, number]}
+ */
+function runTests(title, testCases, printLimit = 30) {
+  console.log(`Testo: ${title}`);
+
+  let runCount = 0;
+  let failedCount = 0;
+  for (const failMessage of testCases) {
+    runCount += 1;
+    if (failMessage) {
+      failedCount += 1;
+      if (!printLimit || failedCount <= printLimit) {
+        console.log('  ' + failMessage);
+      } else if (failedCount === printLimit + 1) {
+        console.log('  (... kaj tiel plu)');
+      }
+    }
+  }
+
+  if (failedCount) {
+    const j = failedCount === 1 ? '' : 'j';
+    console.log(`${failedCount}/${runCount} testo${j} malsukcesis.`);
+  } else {
+    console.log(`Ĉiuj ${runCount} testoj sukcesis.`);
+  }
+  return [runCount, failedCount];
+}
+
+/**
+ * @param {string} tupa
+ * @param {音韻地位} expected
+ * @returns {string | null}
+ */
+function expectResult(tupa, expected) {
+  let failMessage = '';
+  try {
+    const res = 音韻地位fromTUPA(tupa);
+    if (!expected.等於(res)) {
+      failMessage = `${res} liverita`;
+    }
+  } catch (e) {
+    failMessage = `eraro okazinta: ${e}`;
+  }
+  return failMessage ? `${tupa}: ${expected} atendata, ${failMessage}` : null;
+}
+
+/**
+ * @param {string} tupa
+ * @param {string | RegExp} expected
+ * @returns {string | null}
+ */
+function expectError(tupa, expected) {
+  try {
+    const res = 音韻地位fromTUPA(tupa);
+    return `${tupa}: erarenda, sed ${res.描述} liverita`;
+  } catch (e) {
+    if (e.message.search(expected) === -1) {
+      return `${tupa}: erarmesaĝo ne enhavanta '${expected}': ${e}`;
+    }
+    return null;
+  }
+}
+
+function testOnData() {
   const deriveTUPA = new 推導方案(
     /** @type {import('tshet-uinh-deriver-tools').原始推導函數<string>} */ (new Function(
       'TshetUinh',
@@ -17,45 +96,27 @@ function testOnData(printLimit = 30) {
       readFileSync('data/tupa.js', { encoding: 'utf-8' }),
     ).bind(null, TshetUinh)),
   )();
-  let runCount = 0;
-  let failedCount = 0;
-  console.log('Testoj per datumoj de TshetUinh.js');
-  for (const 地位 of TshetUinh.資料.iter音韻地位()) {
-    runCount += 1;
-    const tupa = deriveTUPA(地位);
-    let failMessage = '';
-    try {
-      const res = 音韻地位fromTUPA(tupa);
-      if (!res.等於(地位)) {
-        failMessage = `${res.描述} liverita`;
-        failedCount += 1;
-      }
-    } catch (e) {
-      failMessage = `eraro okazinta: ${e}`;
-      failedCount += 1;
-    }
-    if (failMessage) {
-      if (!printLimit || failedCount <= printLimit) {
-        console.log(`  ${tupa}: ${地位.描述} atendata, ${failMessage}`);
-      } else if (failedCount === printLimit + 1) {
-        console.log('  (... kaj tiel plu)');
-      }
-    }
-  }
-  if (failedCount) {
-    const j = failedCount === 1 ? '' : 'j';
-    console.log(`${failedCount}/${runCount} testo${j} malsukcesis.`);
-  } else {
-    console.log(`Ĉiuj ${runCount} testoj sukcesis.`);
-  }
-  return failedCount === 0;
+  return runTests(
+    'Datumoj de TshetUinh.js',
+    mapIter(TshetUinh.資料.iter音韻地位(), (地位) => expectResult(deriveTUPA(地位), 地位)),
+  )[1] === 0;
 }
 
-// TODO more valid 音韻地位s
+function testSupplement() {
+  /** @type {[string, string][]} */
+  const data = [
+    ['taeq', '端開二麻上'],
+    ['tu', '端四尤平'],
+  ];
+  return runTests(
+    'Aldonaj datumoj',
+    mapIter(data, ([tupa, 描述]) => expectResult(tupa, 音韻地位.from描述(描述))),
+    0,
+  )[1] === 0;
+}
 
 function testInvalid() {
-  console.log('Testoj pri navalidaj latinigoj');
-
+  // TODO 更新
   /** @type {[string, string | RegExp][]} */
   const data = [
     ['ngiox', /【提示：上聲用 -q】/],
@@ -72,33 +133,25 @@ function testInvalid() {
     ['wuo', /無法識別聲母.*【提示：云母不寫】/],
   ];
 
-  let failedCount = 0;
-  for (const [tupa, expected] of data) {
-    try {
-      const res = 音韻地位fromTUPA(tupa);
-      failedCount += 1;
-      console.log(`  ${tupa}: erarenda, sed ${res.描述} liverita`);
-    } catch (e) {
-      if (e.message.search(expected) === -1) {
-        console.log(`${tupa}: erarmesaĝo ne enhavanta '${expected}':`, e);
-        failedCount += 1;
-      }
-    }
-  }
-  if (failedCount) {
-    const j = failedCount === 1 ? '' : 'j';
-    console.log(`${failedCount}/${data.length} testo${j} malsukcesis.`);
-  } else {
-    console.log(`Ĉiuj ${data.length} testoj sukcesis.`);
-  }
-  return failedCount === 0;
+  return runTests(
+    'nevalidaj latinigoj',
+    mapIter(data, ([tupa, expected]) => expectError(tupa, expected)),
+    0,
+  )[1] === 0;
 }
 
 (function main() {
   let success = true;
-  success = testOnData() && success;
-  console.log();
-  success = testInvalid() && success;
+  const suites = [testOnData, testSupplement, testInvalid];
+  let first = true;
+  for (const suite of suites) {
+    if (first) {
+      first = false;
+    } else {
+      console.log();
+    }
+    success = suite() && success;
+  }
 
   process.exit(success ? 0 : 1);
 })();
