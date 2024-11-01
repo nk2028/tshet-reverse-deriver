@@ -1,6 +1,6 @@
 {
   "name": "tupa-parser",
-  "version": "0.3.0-alpha",
+  "version": "0.3.0",
   "description": "Tool for parsing a syllable in TUPA (切韻拼音) into 音韻地位",
   "main": "index.js",
   "module": "index.mjs",
@@ -13,14 +13,14 @@
   },
   "author": "SyiMyuZya",
   "license": "MIT",
-  "dependencies": {
-    "tshet-uinh": "^0.15.1",
-    "tshet-uinh-deriver-tools": "^0.2.0"
-  },
   "devDependencies": {
     "@eslint/js": "^9.10.0",
-    "dprint": "^0.47.2",
-    "eslint": "^9.10.0",
-    "globals": "^15.9.0"
+    "dprint": "^0.47.5",
+    "eslint": "^9.13.0",
+    "globals": "^15.11.0",
+    "tshet-uinh-deriver-tools": "^0.2.0"
+  },
+  "peerDependencies": {
+    "tshet-uinh": "^0.15.1"
   }
 }
