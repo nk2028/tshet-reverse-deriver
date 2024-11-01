@@ -8,8 +8,9 @@ const { 音韻地位 } = TshetUinh;
 module.exports = 音韻地位fromTUPA;
 
 /**
- * @param {string} 音節
- * @param {TshetUinh.邊緣地位種類指定=} 邊緣地位種類
+ * 由切韻拼音之拼寫建立音韻地位
+ * @param {string} 音節 切韻拼音，大小寫均可
+ * @param {TshetUinh.邊緣地位種類指定=} 邊緣地位種類 詳見 TshetUinh.js
  * @returns {音韻地位}
  */
 function 音韻地位fromTUPA(音節, 邊緣地位種類) {

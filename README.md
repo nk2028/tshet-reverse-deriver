@@ -4,22 +4,25 @@
 
 ## 用法
 
-TODO 更新 v0.3.0
-
 ```javascript
-import 拼音反推 from 'tupa-reverse-deriver';
+import 音韻地位fromTUPA from 'tupa-parser';
 
-let 地位 = 拼音反推('tshet');
+let 地位 = 音韻地位fromTUPA('tshet');
 地位.描述; // => 清開四先入
 
-拼音反推('uinh').描述; // => 云合三眞去
+音韻地位fromTUPA('uinh').描述; // => 云合三B真去
 
-拼音反推('ngyoq').描述; // => 疑開三魚上
-拼音反推('ngiox').描述; // Error: 無法識別聲調 x (ngiox)【提示：上聲用 -q】
-拼音反推('ngioq').描述; // Error: 不合法介音搭配 i-o (ngioq) 【提示：用鈍介音 y/u】
+音韻地位fromTUPA('ngyoq').描述; // => 疑開三C魚上
+音韻地位fromTUPA('ngiox').描述; // Error: 無法識別聲調 x (ngiox)【提示：上聲用 -q】
+音韻地位fromTUPA('ngioq').描述; // Error: 音韻地位「疑開三A魚上」不合法 (ngioq):
+                                //   invalid 音韻地位 <疑,開,三,A,魚,上>: unexpected 魚韻A類
+                                //   【提示：用C類】
 
-拼音反推('ngyon').描述; // => 疑開三元平
-拼音反推('ngian').描述; // Error: 不合法介音搭配 i-an (ngian) 【提示：用鈍介音 y/u】
-拼音反推('ngyan').描述; // Error: 音韻地位「疑開三寒平」不合法 (ngyan): Unexpected 等: "三"
-                        // 【提示：元韻為 y/uon】
+音韻地位fromTUPA('ngyon').描述; // => 疑開三C元平
+音韻地位fromTUPA('ngian').描述; // Error: 音韻地位「疑開三A寒平」不合法 (ngian):
+                                //   invalid 音韻地位 <疑,開,三,A,寒,平>: unexpected 寒韻三等
+                                //   【提示：用C類；元韻用 y/uon】
+音韻地位fromTUPA('ngyan').描述; // Error: 音韻地位「疑開三C寒平」不合法 (ngyan):
+                                //   invalid 音韻地位 <疑,開,三,C,寒,平>: unexpected 寒韻三等
+                                //   【提示：元韻用 y/uon】
 ```
