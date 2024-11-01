@@ -1,11 +1,11 @@
 # 切韻拼音解析器
 
-將切韻拼音解析為音韻地位，並可檢查拼寫合法與否。
+將切韻拼音解析為 [TshetUinh.js](https://github.com/nk2028/tshet-uinh-js) 音韻地位，並可檢查拼寫合法與否。
 
 ## 安裝
 
 ```sh
-npm i tupa-parser
+npm i tupa-parser tshet-uinh
 ```
 
 ## 用法
